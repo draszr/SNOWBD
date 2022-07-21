@@ -1,1 +1,289 @@
 -- Tables of DB "SNOWBD"
+-- "lacing_system" table
+CREATE TABLE lacing_system(id_ls INTEGER NOT NULL,
+                        ls_type VARCHAR2(30),
+			PRIMARY KEY(id_ls));
+-- "brand" table
+CREATE TABLE brand(id_brand integer GENERATED ALWAYS  
+                AS IDENTITY PRIMARY KEY,
+		brand_name VARCHAR2(40),
+		agent VARCHAR2(100),
+		contacts VARCHAR2(300)); /* добавить информацию о менеджере поставки и его контакном номере и почты */
+-- "gender" table
+CREATE TABLE gender(id_g INTEGER NOT NULL,
+		gender_name CHAR(6),
+		PRIMARY KEY(id_g),
+		CONSTRAINT ch_gender
+		CHECK(gender_name IN('Woman','Man','Unisex','Kid')));
+-- "insulation" table
+CREATE TABLE insulation(id_ins INTEGER NOT NULL,
+		ins_type VARCHAR2(30),
+		PRIMARY KEY(id_ins));
+-- "riding_style" table
+CREATE TABLE riding_style(id_rs INTEGER NOT NULL,
+		rid_style VARCHAR2(15),
+		PRIMARY KEY(id_rs));
+-- "rocker_type" table
+CREATE TABLE rocker_type(id_rt INTEGER NOT NULL,
+		rock_type VARCHAR2(21),
+		PRIMARY KEY(id_rt));
+-- "shape" table
+CREATE TABLE shape(id_sh INTEGER NOT NULL,
+		shape_type VARCHAR2(20),
+		PRIMARY KEY(id_sh));
+-- "size_boot" table
+CREATE TABLE size_boot(id_bs INTEGER NOT NULL,
+		w_us_bs number(2,1),
+		m_us_bs number(2,1),
+		eu_bs number(2,1),
+		mondo_bs number(2,1),
+		PRIMARY KEY(id_bs));
+-- "size_snowb" table
+CREATE TABLE size_snowb(id_s_s INTEGER NOT NULL,
+		s_size VARCHAR2(10),
+		PRIMARY KEY(id_s_s));
+-- "size_cloth" table
+CREATE TABLE size_cloth(id_c_s INTEGER NOT NULL,
+		c_size CHAR(4),
+		comment1 VARCHAR2(20),
+		PRIMARY KEY(id_c_s));
+-- "costumer" table
+CREATE TABLE costumer(id_costumer integer GENERATED ALWAYS  
+                AS IDENTITY PRIMARY KEY,
+		c_uid VARCHAR2(20) NOT NULL,
+		c_doctype VARCHAR2(14) not null,
+		c_country VARCHAR2(50) default on null 'Kazakhstan',
+		c_fname VARCHAR2(20) NOT NULL,
+		c_lname VARCHAR2(20) NOT NULL,
+		c_dob DATE NOT NULL,
+		c_sex VARCHAR2(1) NOT NULL,
+                c_tel_no VARCHAR2(20) NOT NULL,
+		c_email VARCHAR2(40),
+		address VARCHAR2(300),
+                bonuses INTEGER,
+		discount NUMBER(3,2),
+		f_kids CHAR(1),
+                CONSTRAINT ch_telno_costum
+                           CHECK(REGEXP_LIKE(c_tel_no, '^\+7\(\d{3}\)\d{3}-\d{2}-\d{2}$')
+		OR REGEXP_LIKE(c_tel_no,'^\+375\(\d{2}\)\d{3}-\d{2}-\d{2}$')),
+                CONSTRAINT uni_c_telno
+                           UNIQUE(c_tel_no),
+                CONSTRAINT ch_c_sex
+                           CHECK(c_sex IN('M','F')),
+		CONSTRAINT ch_c_doctype
+                           CHECK(c_doctype  IN('id','passport','driver license')),
+		CONSTRAINT ch_f_kids
+			   CHECK(f_kids IN('Y','N')) );
+-- "position" table
+CREATE TABLE position(id_position integer NOT NULL,
+		position VARCHAR2(30),
+		PRIMARY KEY(id_position)
+		);
+-- "personal" table
+CREATE TABLE personal(id_personal integer GENERATED ALWAYS  
+                AS IDENTITY PRIMARY KEY,
+		IIN CHAR(12) NOT NULL,
+		num_id CHAR(9) NOT NULL,
+		d_issue DATE NOT NULL,
+		d_expire DATE NOT NULL,
+		p_fname VARCHAR2(20) NOT NULL,
+		p_lname VARCHAR2(20) NOT NULL,
+		p_dob DATE NOT NULL,
+		p_sex VARCHAR2(1) NOT NULL,
+		marital_s CHAR(7),
+		id_position integer,
+		f_p_kids CHAR(1),
+		CONSTRAINT ch_IIN
+		CHECK (regexp_like(IIN,'^[0-9]{12}$')),
+		CONSTRAINT ch_num_id
+		CHECK (regexp_like(num_id,'^[0-9]{9}$')),
+                CONSTRAINT ch_p_sex
+                           CHECK(p_sex IN('M','F')),
+		CONSTRAINT uni_num_id
+		UNIQUE(num_id),
+		CONSTRAINT uni_IIN
+		UNIQUE(IIN),
+		CONSTRAINT ch_marital_s 
+	        CHECK(marital_s IN('single','married')),
+		CONSTRAINT ch_f_p_kids
+		CHECK(f_p_kids IN('Y','N')),
+		CONSTRAINT id_posit_fk_personal
+		FOREIGN KEY(id_position)
+		REFERENCES position
+		);
+-- "boot" table
+CREATE TABLE boot(id_boot CHAR(9) NOT NULL,
+		gender integer,
+		lacing_system integer,
+		b_size integer,
+		id_brand integer,
+		condition integer default 1,
+		price number(19,2),
+		PRIMARY KEY(id_boot),
+		CONSTRAINT ch_id_boot
+		CHECK (regexp_like(id_boot,'^02B[0-9]{6}$')),
+		CONSTRAINT gender_fk_boot
+		FOREIGN KEY(gender)
+		REFERENCES gender(id_g),
+		CONSTRAINT size_fk_boot
+		FOREIGN KEY(b_size)
+		REFERENCES size_boot(id_bs),
+		CONSTRAINT ls_fk_boot
+		FOREIGN KEY(lacing_system)
+		REFERENCES lacing_system(id_ls),
+		CONSTRAINT brand_fk_boot
+		FOREIGN KEY(id_brand)
+		REFERENCES brand(id_brand),
+		CONSTRAINT ch_condition_boot
+                CHECK(condition BETWEEN 1 AND 3));
+-- "snowboard" table
+CREATE TABLE snowboard(id_snowb CHAR(9) NOT NULL,
+		gender integer,
+		snowb_size integer,
+		f_W char(1),
+		riding_style integer,
+		rocker_type integer,
+		shape integer,
+		id_brand integer,
+		condition integer default 1,
+		price number(19,2),
+		PRIMARY KEY(id_snowb),
+		CONSTRAINT ch_id_snowb
+		CHECK (regexp_like(id_snowb,'^01S[0-9]{6}$')),
+		CONSTRAINT gender_fk_snowb
+		FOREIGN KEY(gender)
+		REFERENCES gender(id_g),
+		CONSTRAINT ch_f_W
+		CHECK(f_W IN('T','F')),
+		CONSTRAINT rt_fk_snowb
+		FOREIGN KEY(rocker_type)
+		REFERENCES rocker_type(id_rt),
+		CONSTRAINT shape_fk_snowb
+		FOREIGN KEY(shape)
+		REFERENCES shape(id_sh),
+		CONSTRAINT rs_fk_snowb
+		FOREIGN KEY(riding_style)
+		REFERENCES riding_style(id_rs),
+		CONSTRAINT brand_fk_snowb
+		FOREIGN KEY(id_brand)
+		REFERENCES brand(id_brand),
+		CONSTRAINT ch_condition_snowb
+                CHECK(condition BETWEEN 1 AND 3));
+-- "jacket" table
+CREATE TABLE jacket(id_jacket CHAR(9) NOT NULL,
+		gender integer,
+		j_size integer,
+		insulation integer,
+		id_brand integer,
+		condition integer default 1,
+		price number(19,2),
+		PRIMARY KEY(id_jacket),
+		CONSTRAINT ch_id_jacket
+		CHECK (regexp_like(id_jacket,'^03J[0-9]{6}$')),
+		CONSTRAINT gender_fk_jacket
+		FOREIGN KEY(gender)
+		REFERENCES gender(id_g),
+		CONSTRAINT size_fk_jacket
+		FOREIGN KEY(j_size)
+		REFERENCES size_cloth(id_c_s),
+		CONSTRAINT ins_fk_jacket
+		FOREIGN KEY(insulation)
+		REFERENCES insulation(id_ins),
+		CONSTRAINT brand_fk_jacket
+		FOREIGN KEY(id_brand)
+		REFERENCES brand(id_brand),
+		CONSTRAINT ch_condition_jacket
+                CHECK(condition BETWEEN 1 AND 3));
+-- "pant" table
+CREATE TABLE pant(id_pant CHAR(9) NOT NULL,
+		gender integer,
+		p_size integer,
+		insulation integer,
+		id_brand integer,
+		condition integer default 1,
+		price number(19,2),
+		PRIMARY KEY(id_pant),
+		CONSTRAINT ch_id_pant
+		CHECK (regexp_like(id_pant,'^04P[0-9]{6}$')),
+		CONSTRAINT gender_fk_pant
+		FOREIGN KEY(gender)
+		REFERENCES gender(id_g),
+		CONSTRAINT size_fk_pant
+		FOREIGN KEY(p_size)
+		REFERENCES size_cloth(id_c_s),
+		CONSTRAINT ins_fk_pant
+		FOREIGN KEY(insulation)
+		REFERENCES insulation(id_ins),
+		CONSTRAINT brand_fk_pant
+		FOREIGN KEY(id_brand)
+		REFERENCES brand(id_brand),
+		CONSTRAINT ch_condition_pant
+                CHECK(condition BETWEEN 1 AND 3));
+-- "helmet" table
+CREATE TABLE helmet(id_helmet CHAR(9) NOT NULL,
+		gender integer,
+		h_size integer,
+		riding_style integer,
+		f_h_type CHAR(1),
+		id_brand integer,
+		condition integer default 1,
+		price number(19,2),
+		PRIMARY KEY(id_helmet),
+		CONSTRAINT ch_id_helmet
+		CHECK (regexp_like(id_helmet,'^05H[0-9]{6}$')),
+		CONSTRAINT gender_fk_helmet
+		FOREIGN KEY(gender)
+		REFERENCES gender(id_g),
+		CONSTRAINT size_fk_helmet
+		FOREIGN KEY(h_size)
+		REFERENCES size_cloth(id_c_s),
+		CONSTRAINT rs_fk_helmet
+		FOREIGN KEY(riding_style)
+		REFERENCES riding_style(id_rs),
+		CONSTRAINT brand_fk_helmet
+		FOREIGN KEY(id_brand)
+		REFERENCES brand(id_brand),
+		CONSTRAINT ch_f_type_helmet
+                CHECK(f_h_type IN('F','H')),
+		CONSTRAINT ch_condition_helmet
+                CHECK(condition BETWEEN 1 AND 3));
+
+CREATE TABLE waybill(id_waybill integer GENERATED ALWAYS  
+                AS IDENTITY PRIMARY KEY,
+		id_costumer integer,
+		order_t DATE,
+		issue_t DATE,
+		require_t DATE,
+		id_personal integer,
+		CONSTRAINT id_costumer_waybill
+		FOREIGN KEY(id_costumer)
+		REFERENCES costumer,
+		CONSTRAINT id_personal_waybill
+		FOREIGN KEY(id_personal)
+		REFERENCES personal);
+-- "shop_cart" table
+CREATE TABLE shop_cart(id_waybill integer not null,
+		id_snowb CHAR(9),
+		id_boot CHAR(9),
+		id_jacket CHAR(9),
+		id_pant CHAR(9),
+		id_helmet CHAR(9),
+                CONSTRAINT id_waybill_fk_cart
+                FOREIGN KEY(id_waybill)
+		REFERENCES waybill,
+                CONSTRAINT id_snowb_fk_cart
+                FOREIGN KEY(id_snowb)
+                REFERENCES snowboard,
+                CONSTRAINT id_boot_fk_car
+                FOREIGN KEY(id_boot)
+                REFERENCES boot,
+                CONSTRAINT id_jacket_fk_car
+                FOREIGN KEY(id_jacket)
+                REFERENCES jacket,
+                CONSTRAINT id_pant_fk_car
+                FOREIGN KEY(id_pant)
+                REFERENCES pant,
+                CONSTRAINT id_helmet_fk_car
+                FOREIGN KEY(id_helmet)
+                REFERENCES helmet);
+

@@ -1,0 +1,3 @@
+-- Indexes of SNOWBD
+Create index waybill_costumer_i on waybill(id_costumer);
+Create index cart_snowb_i on shop_cart(id_snowb);

@@ -1,0 +1,61 @@
+/* Условная выборка. Вывести накладные, где итоговая сумма чека была между 15000 и 30000 тысяч тенге. */
+SELECT * 
+FROM waybill
+WHERE final_sum BETWEEN 15000 AND 30000;
+-- Итоговый запрос. Вывести cумму затраченную на закуп инвентаря в тенге;
+SELECT (select SUM(price) from snowboard) + (select SUM(price) from boot) 
++ (select SUM(price) from jacket)+ (select SUM(price) from pant)
++ (select SUM(price) from helmet)||'tg' as Itog_summa from dual; 
+-- Параметрический запрос. «Список клиентов, арендовавших сноуборды заданного типа катания»;
+SELECT sh.id_waybill
+FROM shop_cart sh INNER JOIN
+(snowboard s INNER JOIN riding_style r ON s.riding_style = r.id_rs) 
+ON s.id_snowb = sh.id_snowb
+WHERE r.rid_style = &vvedite_stil_kataniya;
+-- Запрос на объединение. Итоговые суммы, затраченные на закуп сноубордов и ботинок в столбец;
+SELECT 'Snowboard'||' '||sum(price) as summa from snowboard
+UNION ALL 
+SELECT  'Boot'||' '||SUM(price) from boot; 
+-- Запрос по полю с типом дата. Количество аренды инвентаря по месяцам.
+SELECT extract(month from order_t) "Month",
+ count(id_waybill) "Kol" from waybill
+WHERE order_t is not null
+GROUP BY extract(month from order_t);
+-- Вывести заказы с полным ФИО и ИИН заказчика.
+SELECT w.id_waybill, c.c_fname||' '||c.c_lname||'('||c.c_uid||')' as Client,
+w.order_t as "Order date", w.issue_t as "Issue date",
+ w.require_t as "Require date"
+FROM waybill w
+JOIN costumer c on c.id_costumer = w.id_costumer;
+/* Внешнее соединение. Вывести все размеры инвентаря в заказах на аренды за все время.
+который не применялся в предыдущих запросах */
+SELECT s.snowb_size, b.b_size, j.j_size, p.p_size, h.h_size
+FROM shop_cart c
+ LEFT join snowboard s on s.id_snowb = c.id_snowb
+ LEFT join boot b on b.id_boot = c.id_boot
+ LEFT join jacket j on j.id_jacket = c.id_jacket
+ LEFT join pant p on p.id_pant = c.id_pant
+ LEFT join helmet h on h.id_helmet = c.id_helmet
+ LEFT join waybill_v w on w.id_waybill = c.id_waybill;
+-- *** с использованием предиката IN с подзапросом ***
+-- Запрос вывести ID клиента и и ФИО с идентификационным номером документа:
+SELECT distinct w.id_costumer, c.c_fname||' '||c.c_lname||'('||c.c_uid||')' as Client
+FROM waybill w
+JOIN costumer c ON c.id_costumer = w.id_costumer
+WHERE w.id_costumer 
+IN(select id_costumer
+FROM (select id_costumer, count(id_costumer) from waybill
+GROUP BY (id_costumer)
+HAVING count(id_costumer)>=2));
+-- *** с использованием предиката ANY/ALL с подзапросом;
+-- Вывести список объектов, которые цена равна 500:
+SELECT *
+FROM boot 
+WHERE price > ALL(select price from snowboard); 
+-- *** с использованием предиката EXISTS/NOT EXISTS с подзапросом.
+-- Сноуборды, которые еще никто не брал в аренду:
+SELECT * from snowboard s
+WHERE NOT EXISTS(select  c.id_snowb from shop_cart c
+WHERE s.id_snowb = c.id_snowb);	 
+
+
