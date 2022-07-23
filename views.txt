@@ -1,0 +1,39 @@
+/* Представление с информацией о клиентах, имеющих детей
+ (горизонтальное обновляемое представление)*/
+CREATE OR REPLACE VIEW v_costumers_with_kids AS
+SELECT *
+FROM costumer
+WHERE f_kids = 'Y'
+with check option constraint ch_cost_kids;
+
+/* проверить обновляемость горизонтального представления с фразой WITH CHECK OPTION
+ при помощи одной из инструкций UPDATE, DELETE, INSERT (привести примеры выполняющихся и не выполняющихся инструкций, объяснить); */
+insert into v_costumers_with_kids(c_uid, c_doctype, c_country, c_fname, c_lname, 
+c_dob, c_sex, c_tel_no, c_email, address, bonuses, discount, f_kids )  values('122ABG123', 'driver license', 'USA','Sindy','Crawford',
+to_date('07.11.1981', 'dd.mm.yyyy'), 'F', '+375(29)116-03-33', NULL, NULL, NULL, NULL, 'Y');
+
+/* Создать вертикальное или смешанное необновляемое представление, предназначенное
+для работы с основной таблицей БД (в представлении должны содержаться сведения
+из основной дочерней таблицы и/или корзины (если есть), но вместо внешних ключей
+использовать связанные данные родительских таблиц, понятные конечному
+пользователю представления); */
+CREATE OR REPLACE VIEW shop_cart_v as
+select w.Client, s.snowb_size, b.b_size, j.j_size, p.p_size, h.h_size
+from shop_cart c
+left join snowboard s on s.id_snowb = c.id_snowb
+left join boot b on b.id_boot = c.id_boot
+left join jacket j on j.id_jacket = c.id_jacket
+left join pant p on p.id_pant = c.id_pant
+left join helmet h on h.id_helmet = c.id_helmet
+left join waybill_v w on w.id_waybill = c.id_waybill;
+
+/* Cоздать обновляемое представление для работы с одной из родительских таблиц 
+индивидуальной БД и через него разрешить работу с данными только в рабочие дни 
+(с пятницs по восресенье) и в рабочие часы (с 9:00 до 22:00). */
+CREATE OR REPLACE VIEW waybill_view AS
+SELECT  * FROM waybill w
+where (select to_number(to_char(sysdate,'d')) from dual)
+in(5,6,7,1)
+and (select to_number(to_char(sysdate,'hh24')) from dual)
+between 9 and 22 
+with check option;
